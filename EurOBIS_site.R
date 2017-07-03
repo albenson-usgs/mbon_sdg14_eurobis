@@ -14,10 +14,19 @@ d = tibble(
   dir     = list.dirs(dir_data, recursive=F),
   occ_txt = file.path(dir, 'occurrence.txt'),
   name    = str_replace(basename(dir), 'dwca-imr_(.*)-v1.1', '\\1'),
-  data    = map(occ_txt, function(x) read_delim(file=x, delim='\t', escape_double=F, trim_ws=T))) %>%
-  unnest()
-# Error in bind_rows_(x, .id) : Column `eventDate` can't be converted from POSIXct, POSIXt to character
+  data    = map(occ_txt, function(x) read_delim(file=x, delim='\t', escape_double=F, trim_ws=T)))
+# d[,-c(1:2)] # d0 = d # d = d0
 
+occurrence_combined = d %>%
+  mutate(
+    # fix for unnest Error in bind_rows_(x, .id) : Column `eventDate` can't be converted from POSIXct, POSIXt to character
+    data = map(data, function(x) mutate(x, eventDate = as.character(eventDate)))) %>%
+  select(name, data) %>%
+  unnest()
+
+# Separating out occurrences that are not identified to at lease the genus level and then grabbing the unique scientific names
+occurrence_combined_speciesonly <- occurrence_combined[!is.na(occurrence_combined$genus),]
+  
 # Separating out occurrences that are not identified to at lease the genus level and then grabbing the unique scientific names
 occurrence_combined_speciesonly <- occurrence_combined[!is.na(occurrence_combined$genus),]
 occurrence_combined_genusonly_unique <- occurrence_combined_speciesonly[!duplicated(occurrence_combined_speciesonly$scientificName),]
