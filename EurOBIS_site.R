@@ -1,47 +1,22 @@
 library(vegan)
-library(readr)
 library(Hmisc)
 require(leaflet)
-library(dplyr)
+library(tidyverse) # includes readr, dplyr
+library(stringr)
 
+# set host-specific path to data files that are too big for Github
+dir_data = switch(
+  R.utils::System$getHostname(),
+  'Ben-Bests-Macbook-Pro.local' = '~/Google Drive/projects/mbon/products/infographics/mbon_sdg14_eurobis')
 
 #import files downloaded from EurOBIS IPT
-# imr_fish_eggs_survey_occurrence <- read_delim("~/OBIS/MBONs/GEOBON MBON/SDG14Project/dwca-imr_fish_eggs_survey-v1.1/occurrence.txt",
-#                                               "\t", escape_double = FALSE, trim_ws = TRUE)
-# imr_fish_eggs_survey_measurementorfact <- read_delim("~/OBIS/MBONs/GEOBON MBON/SDG14Project/dwca-imr_fish_eggs_survey-v1.1/measurementorfact.txt",
-#                                                      "\t", escape_double = FALSE, trim_ws = TRUE)
-imr_juvenile_fish_monitoring_occurrence <- read_delim("~/OBIS/MBONs/GEOBON MBON/SDG14Project/dwca-imr_juveline_fish_monitoring-v1.1/occurrence.txt",
-                                                      "\t", escape_double = FALSE, trim_ws = TRUE)
-imr_juvenile_fish_monitoring_measurementorfact <- read_delim("~/OBIS/MBONs/GEOBON MBON/SDG14Project/dwca-imr_juveline_fish_monitoring-v1.1/measurementorfact.txt",
-                                                             "\t", escape_double = FALSE, trim_ws = TRUE)
-imr_mareano_beamtrawl_occurrence <- read_delim("~/OBIS/MBONs/GEOBON MBON/SDG14Project/dwca-imr_mareano_beamtrawl-v1.1/occurrence.txt",
-                                               "\t", escape_double = FALSE, trim_ws = TRUE)
-imr_mareano_beamtrawl_measurementorfact <- read_delim("~/OBIS/MBONs/GEOBON MBON/SDG14Project/dwca-imr_mareano_beamtrawl-v1.1/measurementorfact.txt",
-                                                      "\t", escape_double = FALSE, trim_ws = TRUE)
-imr_mareano_grab_occurrence <- read_delim("~/OBIS/MBONs/GEOBON MBON/SDG14Project/dwca-imr_mareano_grab-v1.1/occurrence.txt",
-                                          "\t", escape_double = FALSE, trim_ws = TRUE)
-imr_mareano_grab_measurementorfact <- read_delim("~/OBIS/MBONs/GEOBON MBON/SDG14Project/dwca-imr_mareano_grab-v1.1/measurementorfact.txt",
-                                                 "\t", escape_double = FALSE, trim_ws = TRUE)
-imr_mareano_rpsledge_occurrence <- read_delim("~/OBIS/MBONs/GEOBON MBON/SDG14Project/dwca-imr_mareano_rpsledge-v1.1/occurrence.txt",
-                                              "\t", escape_double = FALSE, trim_ws = TRUE)
-imr_mareano_rpsledge_measurementorfact <- read_delim("~/OBIS/MBONs/GEOBON MBON/SDG14Project/dwca-imr_mareano_rpsledge-v1.1/measurementorfact.txt",
-                                                     "\t", escape_double = FALSE, trim_ws = TRUE)
-imr_zoopl_northsea_occurrence <- read_delim("~/OBIS/MBONs/GEOBON MBON/SDG14Project/dwca-imr_zoopl_north_sea-v1.1/occurrence.txt",
-                                            "\t", escape_double = FALSE, trim_ws = TRUE)
-imr_zoopl_northsea_measurementorfact <- read_delim("~/OBIS/MBONs/GEOBON MBON/SDG14Project/dwca-imr_zoopl_north_sea-v1.1/measurementorfact.txt",
-                                                   "\t", escape_double = FALSE, trim_ws = TRUE)
-imr_zoopl_norwsea_occurrence <- read_delim("~/OBIS/MBONs/GEOBON MBON/SDG14Project/dwca-imr_zoopl_norw_sea-v1.1/occurrence.txt",
-                                           "\t", escape_double = FALSE, trim_ws = TRUE)
-imr_zoopl_norwsea_measurementorfact <- read_delim("~/OBIS/MBONs/GEOBON MBON/SDG14Project/dwca-imr_zoopl_norw_sea-v1.1/measurementorfact.txt",
-                                                  "\t", escape_double = FALSE, trim_ws = TRUE)
-# nsbp_cochrane_occurrence <- read_delim("~/OBIS/MBONs/GEOBON MBON/SDG14Project/dwca-nsbp_cochrane-v1.1/occurrence.txt",
-#                                        "\t", escape_double = FALSE, trim_ws = TRUE)
-# nsbp_cochrane_measurementorfact <- read_delim("~/OBIS/MBONs/GEOBON MBON/SDG14Project/dwca-nsbp_cochrane-v1.1/measurementorfact.txt",
-#                                               "\t", escape_double = FALSE, trim_ws = TRUE)
-
-occurrence_combined <- rbind(imr_juvenile_fish_monitoring_occurrence, imr_mareano_beamtrawl_occurrence, 
-                             imr_mareano_grab_occurrence, imr_mareano_rpsledge_occurrence, imr_zoopl_northsea_occurrence, 
-                             imr_zoopl_norwsea_occurrence)
+d = tibble(
+  dir     = list.dirs(dir_data, recursive=F),
+  occ_txt = file.path(dir, 'occurrence.txt'),
+  name    = str_replace(basename(dir), 'dwca-imr_(.*)-v1.1', '\\1'),
+  data    = map(occ_txt, function(x) read_delim(file=x, delim='\t', escape_double=F, trim_ws=T))) %>%
+  unnest()
+# Error in bind_rows_(x, .id) : Column `eventDate` can't be converted from POSIXct, POSIXt to character
 
 # Separating out occurrences that are not identified to at lease the genus level and then grabbing the unique scientific names
 occurrence_combined_speciesonly <- occurrence_combined[!is.na(occurrence_combined$genus),]
