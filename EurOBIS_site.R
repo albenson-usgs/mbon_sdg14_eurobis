@@ -13,12 +13,13 @@ dir_data = switch(
 
 # import files downloaded from EurOBIS IPT
 d = tibble(
-  dir      = list.dirs(dir_data, recursive=F),
+  dir      = list.files(dir_data, pattern='dwca-imr_.*-v1\\.1$', full.names=T),
   occ_txt  = file.path(dir, 'occurrence.txt'),
   mof_txt  = file.path(dir, 'measurementorfact.txt'),
   name     = str_replace(basename(dir), 'dwca-imr_(.*)-v1.1', '\\1'),
   occ_data = map(occ_txt, function(x) read_delim(file=x, delim='\t', escape_double=F, trim_ws=T)),
-  mof_data = map(mof_txt, function(x) read_delim(file=x, delim='\t', escape_double=F, trim_ws=T)))
+  mof_data = map(mof_txt, function(x) read_delim(file=x, delim='\t', escape_double=F, trim_ws=T))) %>% 
+  filter(name != 'fish_eggs_survey')
 # TODO: sort measurementorfact.txt Warning: 538 parsing failures... measurementValue no trailing characters
 # d[,-c(1:3)] # d0 = d # d = d0
 
