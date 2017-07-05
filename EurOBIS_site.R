@@ -25,8 +25,8 @@ d = tibble(
 # combine occurrence data
 occ = d %>%
   mutate(
-    # fix for unnest Error in bind_rows_(x, .id) : Column `eventDate` can't be converted from POSIXct, POSIXt to character
-    occ_data = map(occ_data, function(x) mutate(x, eventDate = as.character(eventDate)))) %>%
+     # fix for unnest Error in bind_rows_(x, .id) : Column `eventDate` can't be converted from POSIXct, POSIXt to character
+     occ_data = map(occ_data, function(x) mutate(x, eventDate = as.character(eventDate)))) %>%
   select(name, occ_data) %>%
   unnest()
 
@@ -61,14 +61,17 @@ occ_mof = occ %>%
     by='id')
 
 # summarize by group and year
-occ_mof %>%
+occ_grp_yr = occ_mof %>%
   group_by(group, year) %>%
   summarize(
     avg = mean(measurementValue, na.rm=T),
-    n   = n()) %>%
+    n   = n())
   #arrange(phylum, desc(avg)) %>% # NOTE: group_by(group, year) takes care of sensible ordering of rows
+
+occ_grp_yr %>%
   knitr::kable()
 
+write_csv(occ_grp_yr, 'EurOBIS_group-year.csv')
 
 # TODO: figure out measurementUnit -> measurementValue conversions
 # TODO: Try to take into account level of effort somehow? Number of collection days?
