@@ -7,8 +7,9 @@ library(stringr)
 
 # set host-specific path to data files that are too big for Github
 dir_data = switch(
-  R.utils::System$getHostname(),
-  'Ben-Bests-Macbook-Pro.local' = '~/Google Drive/projects/mbon/products/infographics/mbon_sdg14_eurobis')
+  R.utils::System$getUsername(),
+  'bbest'    = '~/Google Drive/projects/mbon/products/infographics/mbon_sdg14_eurobis',
+  'albenson' = '~/OBIS/MBONs/GEOBON MBON/SDG14Project')
 
 # import files downloaded from EurOBIS IPT
 d = tibble(
